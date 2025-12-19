@@ -1,0 +1,158 @@
+# ============================================================================
+# Plik konfiguracyjny OpenSSL dla certyfikatu testowego KSeF
+# NIP: 5265877635
+# Data utworzenia: 2025-12-12
+# ============================================================================
+# Ten plik konfiguracyjny definiuje wszystkie wymagane atrybuty i rozszerzenia
+# dla certyfikatu testowego zgodnego z wymaganiami Krajowego Systemu e-Faktur.
+# ============================================================================
+
+[req]
+# Długość domyślnego klucza RSA (2048 bitów - minimum dla bezpieczeństwa)
+default_bits       = 2048
+# Kodowanie klucza prywatnego
+default_keyfile    = private_key.pem
+# Algorytm skrótu używany do podpisu CSR
+default_md         = sha256
+# Nie szyfruj klucza prywatnego (dla środowiska testowego)
+# W produkcji zaleca się użycie encrypt_key = yes
+encrypt_key        = no
+# Nie pytaj interaktywnie o dane - wszystkie dane są w pliku
+prompt             = no
+# Format Distinguished Name: RFC 2253 (standardowy dla X.509)
+distinguished_name = req_distinguished_name
+# Rozszerzenia dla certyfikatu (v3)
+req_extensions     = v3_req
+# Atrybuty dla CSR (opcjonalne)
+attributes         = req_attributes
+# Format łańcucha certyfikatu
+string_mask        = utf8only
+# Wersja X.509
+x509_extensions    = v3_ca
+
+# ============================================================================
+# [req_distinguished_name] - Dane podmiotu certyfikatu (Subject DN)
+# ============================================================================
+# Te wartości identyfikują organizację i są wymagane przez KSeF
+
+[req_distinguished_name]
+# C - Kod kraju (ISO 3166-1 alpha-2)
+C                  = PL
+
+# O - Nazwa organizacji (pełna nazwa firmy)
+# WAŻNE: Dla certyfikatu testowego - można użyć dowolnej nazwy
+O                  = Organizacja Testowa KSeF
+
+# OU - Jednostka organizacyjna (dział, sekcja)
+# Opcjonalne, ale pomocne w identyfikacji celu certyfikatu
+OU                 = Departament IT - Testy KSeF
+
+# CN - Nazwa pospolita (Common Name)
+# W przypadku pieczęci firmowej: nazwa systemu lub aplikacji
+# W przypadku osoby: imię i nazwisko
+CN                 = Certyfikat Testowy KSeF NIP 5265877635
+
+# ST - Stan/Województwo (opcjonalne dla Polski)
+ST                 = Mazowieckie
+
+# L - Miejscowość (opcjonalne)
+L                  = Warszawa
+
+# ============================================================================
+# organizationIdentifier - KLUCZOWE POLE dla KSeF!
+# ============================================================================
+# OID 2.5.4.97 - Identyfikator organizacji zgodny z eIDAS
+# Format WYMAGANY przez KSeF: VATPL-[10 cyfr NIP bez kresek]
+# Ten identyfikator jest używany przez KSeF do weryfikacji uprawnień
+organizationIdentifier = VATPL-5265877635
+
+# ============================================================================
+# serialNumber - Alternatywne pole dla NIP (dla certyfikatów osobowych)
+# ============================================================================
+# OID 2.5.4.5 - Numer seryjny
+# Format dla osoby fizycznej z NIP: TINPL-[NIP]
+# Format dla osoby fizycznej z PESEL: PNOPL-[PESEL]
+# UWAGA: Dla pieczęci firmowej (jaką generujemy) to pole NIE POWINNO być używane
+# Zakomentowane, aby nie mieszać z organizationIdentifier
+# serialNumber     = TINPL-5265877635
+
+# ============================================================================
+# [req_attributes] - Dodatkowe atrybuty CSR (opcjonalne)
+# ============================================================================
+[req_attributes]
+# challengePassword - hasło wyzwania (opcjonalne, rzadko używane)
+# challengePassword = opcjonalne_haslo
+
+# ============================================================================
+# [v3_req] - Rozszerzenia X.509 v3 dla CSR
+# ============================================================================
+# Te rozszerzenia definiują dopuszczalne zastosowania certyfikatu
+
+[v3_req]
+# Podstawowe ograniczenia - to NIE jest certyfikat CA
+basicConstraints = CA:FALSE
+
+# Użycie klucza - do czego może być używany certyfikat
+# digitalSignature - podpisywanie cyfrowe (WYMAGANE dla XAdES)
+# keyEncipherment - szyfrowanie kluczy (dla TLS)
+# nonRepudiation - niezaprzeczalność (dla podpisów prawnie wiążących)
+keyUsage = critical, digitalSignature, nonRepudiation, keyEncipherment
+
+# Rozszerzone użycie klucza - szczegółowe zastosowania
+# clientAuth - uwierzytelnianie klienta (dla TLS/SSL)
+# emailProtection - ochrona poczty e-mail (S/MIME)
+# codeSigning - podpisywanie kodu
+extendedKeyUsage = clientAuth, emailProtection
+
+# Identyfikator klucza podmiotu (Subject Key Identifier)
+# Automatycznie generowany skrót klucza publicznego
+subjectKeyIdentifier = hash
+
+# Identyfikator klucza urzędu certyfikacji (Authority Key Identifier)
+# Dla certyfikatu samopodpisanego - taki sam jak subjectKeyIdentifier
+#authorityKeyIdentifier = keyid:always,issuer:always
+
+# ============================================================================
+# Alternatywne nazwy podmiotu (Subject Alternative Names)
+# ============================================================================
+# Opcjonalne rozszerzenie dla dodatkowych identyfikatorów
+# Może zawierać adresy email, DNS, URI, itp.
+# subjectAltName = @alt_names
+
+# [alt_names]
+# email.1 = kontakt@example.com
+# DNS.1   = ksef-test.example.com
+# URI.1   = https://example.com/ksef
+
+# ============================================================================
+# [v3_ca] - Rozszerzenia dla certyfikatu samopodpisanego (self-signed CA)
+# ============================================================================
+# Te rozszerzenia są używane podczas generowania końcowego certyfikatu
+
+[v3_ca]
+# Podstawowe ograniczenia - to certyfikat końcowy (end-entity), nie CA
+basicConstraints = critical, CA:FALSE
+
+# Użycie klucza (identyczne jak w v3_req)
+keyUsage = critical, digitalSignature, nonRepudiation, keyEncipherment
+
+# Rozszerzone użycie klucza
+extendedKeyUsage = clientAuth, emailProtection
+
+# Identyfikator klucza podmiotu
+subjectKeyIdentifier = hash
+
+# Identyfikator klucza urzędu (dla self-signed = identyczny z subject)
+#authorityKeyIdentifier = keyid:always,issuer:always
+
+# ============================================================================
+# UWAGI KOŃCOWE
+# ============================================================================
+# 1. Certyfikat wygenerowany z tą konfiguracją jest TYLKO DO TESTÓW
+# 2. W środowisku produkcyjnym KSeF wymaga certyfikatu KWALIFIKOWANEGO
+#    od dostawcy z listy EU Trusted List (EUTL)
+# 3. NIP 5265877635 musi być zgodny z faktycznym NIP-em używanym w systemie
+# 4. Certyfikat będzie samopodpisany - w KSeF testowym można go autoryzować
+#    przez fingerprint (SHA-256)
+# 5. Domyślna ważność certyfikatu to 365 dni (określona w komendzie openssl)
+# ============================================================================
